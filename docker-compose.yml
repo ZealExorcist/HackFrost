@@ -37,5 +37,6 @@ services:
       postgres:
         condition: service_started
     environment:
-      SECRET_GROQ_API_KEY: Z3NrX1JkM2cxS3JWMTk4OUtNemlsdGZrV0dkeWIzRlk4ZVNVYU9MZ1pXdmlGazRjVG9aaE1LelI=
-      SECRET_MONGO_URI: bW9uZ29kYitzcnY6Ly9yb2hhbm5heWFrYW50aToyMDA0JTQwQXRsYXNAa2VzdHJhLmU3ZGNwLm1vbmdvZGIubmV0Lw==
+      SECRET_GROQ_API_KEY: secret_groq
+      SECRET_EMAIL_USERNAME: secret_email
+      SECRET_EMAIL_PASSWORD: secret_password
