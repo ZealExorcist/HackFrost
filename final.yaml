@@ -1,0 +1,64 @@
+id: final
+namespace: final.code
+
+variables:
+  server: https://demo.gotenberg.dev
+
+inputs:
+  - id: values
+    type: ARRAY
+    itemType: STRING
+
+tasks:
+  - id: for
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ inputs.values}}"
+    tasks:
+      - id: groq
+        type: io.kestra.plugin.scripts.python.Script
+        beforeCommands:
+          - pip install requests kestra
+        namespaceFiles:
+          enabled: true
+        script: |
+          import requests
+          from kestra import Kestra
+
+          with open("{{ taskrun.value }}") as f:
+              code = f.read()
+              url = "https://api.groq.com/openai/v1/chat/completions"
+              headers = {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer {{ secret('GROQ_API_KEY') }}",
+              }
+              data = {
+                  "model": "llama3-8b-8192",
+                  "messages": [
+                      {
+                              "role": "system",
+                              "content": "you are a code safety officer... you're job is to check code or document data and give a report on the safety of the program or give a data protection law report such as if the data is appropiate to the data laws of {{ kv('region') }} and also provide the criticality of the issue."
+                          },
+                          {
+                              "role": "user",
+                              "content": code
+                          }
+                  ],
+              }
+
+              response = requests.post(url, headers=headers, json=data).json()
+              data = response['choices'][0]['message']['content']
+              output = { "data": data}
+              Kestra.outputs(output)
+        taskRunner:
+          type: io.kestra.plugin.scripts.runner.docker.Docker
+
+      - id: send
+        type: io.kestra.plugin.notifications.mail.MailSend
+        from: rohan.nayakanti@gmail.com
+        to: "{{ kv('email') }}"
+        username: "{{ secret('EMAIL_USERNAME') }}"
+        password: "{{ secret('EMAIL_PASSWORD') }}"
+        host: smtp.gmail.com
+        port: 465 # or 587
+        subject: "output data from files"
+        plainTextContent: "{{ 'outputs.groq.vars.data' }}"
